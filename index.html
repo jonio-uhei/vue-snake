@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Vueで作ったスネークゲーム</title>
+    </head>
+    <body>
+        <div id="app">   
+            <p class="score">SCORE:{{score}}</p>
+            <div id="stage">
+                <div 
+                    class="cell"
+                    v-for="i in stage_cells_count"
+                    :class="{
+                        head:snake_head_index == i - 1,
+                        body:snake.body_indexes.includes(i - 1),
+                        fruit:fruit_index == i - 1
+                    }"
+                ></div>
+            </div>
+            <p 
+                class="gameover"
+                v-if="is_gameover"
+            >GAME OVER</p>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.min.js"></script>
+        <script>
+
+            var app = new Vue({
+                el: '#app',
+                data:{
+                    stage_side_length:10,
+                    snake:{
+                        head_pos:{
+                            x:1,
+                            y:3
+                        },
+                        speed:400,
+                        direction:'→',
+                        body_length: 3,	
+                        body_indexes: [], 
+                    },
+                    fruit_index:0 
+                },
+                methods:{
+                    time_goes(){
+                        if(this.is_gameover){
+                            return;
+                        }
+                        this.forward_snake();
+                        setTimeout(this.time_goes,this.snake.speed);
+                    },
+                    forward_snake(){
+                        if(this.snake.body_indexes.length >= this.snake.body_length){
+                            this.snake.body_indexes.shift();
+                        }
+                        if(this.snake.body_indexes.length < this.snake.body_length){
+                            this.snake.body_indexes.push(this.snake_head_index);
+                        }
+                        if(this.snake.direction == '←'){
+                            this.snake.head_pos.x --;
+                        }
+                        if(this.snake.direction == '↑'){
+                            this.snake.head_pos.y --;
+                        }
+                        if(this.snake.direction == '→'){
+                            this.snake.head_pos.x ++;
+                        }
+                        if(this.snake.direction == '↓'){
+                            this.snake.head_pos.y ++;
+                        }
+                    },
+                    on_keydown(event){
+                        if(event.key == 'ArrowUp'){
+                            this.snake.direction = '↑';
+                        }
+                        if(event.key == 'ArrowRight'){
+                            this.snake.direction = '→';
+                        }
+                        if(event.key == 'ArrowDown'){
+                            this.snake.direction = '↓';
+                        }
+                        if(event.key == 'ArrowLeft'){
+                            this.snake.direction = '←';
+                        }
+                    },
+                    randomize_fruit_index(){
+                        this.fruit_index = Math.floor(Math.random()*this.stage_cells_count);
+                    }
+                },
+                created(){
+                    this.time_goes();
+                    document.addEventListener('keydown',this.on_keydown);
+                    this.randomize_fruit_index();
+                },
+                computed:{
+                    stage_cells_count(){
+                        return this.stage_side_length*this.stage_side_length;
+                    },
+                    snake_head_index(){
+                        if(this.is_frameout){
+                            return null;
+                        }
+                        return this.snake.head_pos.y*this.stage_side_length+this.snake.head_pos.x;
+                    },
+                    score(){
+                        return this.snake.body_length - 1;
+                    },
+                    is_frameout(){
+                        const {x,y} = this.snake.head_pos;
+                        return x < 0 || this.stage_side_length <= x || y < 0 || this.stage_side_length <= y
+                    },
+                    is_collided(){
+                        return this.snake.body_indexes.includes(this.snake_head_index);
+                    },
+                    is_gameover(){
+                        return this.is_collided || this.is_frameout;
+                    }
+                },
+                watch:{
+                    snake_head_index(newValue){
+                        if(newValue == this.fruit_index){
+                            this.snake.body_length ++;
+                            this.randomize_fruit_index();
+                        }
+                    }
+                }
+            })
+        </script>
+
+        <style>
+            #stage{
+                display: grid;
+                grid-template-columns:repeat(10,30px);
+                grid-template-rows:repeat(10,30px);
+                grid-gap:2px;
+                width: 300px;
+                margin:100px auto 0;
+            }
+            .cell{
+                background:whitesmoke;
+            }
+            .cell.head{
+                background:dimgray;
+            }
+            .cell.body {
+                background: darkgray;
+            }.cell.fruit{
+                background:orangered;
+            }
+            .score,.gameover{
+                margin-left: 400px;
+            }
+            .gameover{
+                font-size: 40px;
+                width: 300px;
+                margin-left:auto;
+                margin-right:auto;
+                color:red;
+            }
+        </style>
+    </body>
+</html>
